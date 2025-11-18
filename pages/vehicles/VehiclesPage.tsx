@@ -8,7 +8,7 @@ import { Spinner } from '../../components/ui/Spinner';
 import { VehicleForm } from './VehicleForm';
 import { VehicleDetails } from './VehicleDetails';
 import { Select } from '../../components/ui/Select';
-import { tokenService } from '../../services/tokenService'; // We assume tokenService handles auth state or pass user prop
+import { tokenService } from '../../services/tokenService';
 
 export const VehiclesPage: React.FC = () => {
     const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -17,10 +17,10 @@ export const VehiclesPage: React.FC = () => {
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
     const [viewingVehicle, setViewingVehicle] = useState<Vehicle | null>(null);
-    const [currentUser, setCurrentUser] = useState<any>(null); // Ideally passed from props, but fetching for local state
     
     // Filtering state
     const [searchTerm, setSearchTerm] = useState('');
+    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [brandFilter, setBrandFilter] = useState('');
     const [modelFilter, setModelFilter] = useState('');
@@ -28,20 +28,6 @@ export const VehiclesPage: React.FC = () => {
     useEffect(() => {
         const init = async () => {
             setLoading(true);
-            // Hack: Get current user from API/LocalStorage context for this demo page
-            // In a real app, 'user' would be passed as prop from App.tsx
-            const users = await api.getUsers();
-            // This is a simplification. App.tsx handles real auth state.
-            // We'll rely on the API filtering mostly.
-            
-            // Fetch vehicles. If logged in as technician (simulated check), logic inside API or here.
-            // Since App.tsx holds state, we should ideally receive it. 
-            // For now, we will fetch all and filter client side if needed, or assume API handles it.
-            
-            // Let's grab the user from the tokenService simulation context we might have set
-            // Or better, let's fetch all, and filter based on role if we knew it.
-            // Ideally VehiclesPage should receive { user } prop.
-            // Assuming API does filtering based on identity in a real scenario.
             const data = await api.getVehicles(); 
             setVehicles(data);
             setLoading(false);
@@ -49,6 +35,17 @@ export const VehiclesPage: React.FC = () => {
         }
         init();
     }, []);
+
+    // Debounce search term
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedSearchTerm(searchTerm);
+        }, 300); // 300ms delay
+
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [searchTerm]);
 
     const handleNewVehicle = () => {
         setSelectedVehicle(null);
@@ -75,16 +72,16 @@ export const VehiclesPage: React.FC = () => {
     
     const filteredVehicles = useMemo(() => {
         return vehicles.filter(v => 
-            (searchTerm === '' || 
-                v.matricula.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                v.marca.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                v.modelo.toLowerCase().includes(searchTerm.toLowerCase())
+            (debouncedSearchTerm === '' || 
+                v.matricula.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+                v.marca.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+                v.modelo.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
             ) &&
             (statusFilter === '' || v.estado === statusFilter) &&
             (brandFilter === '' || v.marca === brandFilter) &&
             (modelFilter === '' || v.modelo === modelFilter)
         );
-    }, [vehicles, searchTerm, statusFilter, brandFilter, modelFilter]);
+    }, [vehicles, debouncedSearchTerm, statusFilter, brandFilter, modelFilter]);
     
     const uniqueBrands = useMemo(() => [...new Set(vehicles.map(v => v.marca))], [vehicles]);
     const uniqueModels = useMemo(() => [...new Set(vehicles.map(v => v.modelo))], [vehicles]);

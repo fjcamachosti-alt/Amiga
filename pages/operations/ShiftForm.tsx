@@ -39,18 +39,34 @@ export const ShiftForm: React.FC<ShiftFormProps> = ({ shift, onSave, onCancel, u
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const isValidDate = (d: Date) => d instanceof Date && !isNaN(d.getTime());
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!formData.start || !formData.end || new Date(formData.start) >= new Date(formData.end)) {
-        setError('La fecha de fin debe ser posterior a la fecha de inicio.');
+    
+    if (!formData.start || !formData.end) {
+        setError('Las fechas de inicio y fin son obligatorias.');
+        return;
+    }
+
+    const startDate = new Date(formData.start);
+    const endDate = new Date(formData.end);
+
+    if (!isValidDate(startDate) || !isValidDate(endDate)) {
+        setError('Las fechas introducidas no son válidas.');
+        return;
+    }
+
+    if (startDate >= endDate) {
+        setError('La fecha de inicio debe ser anterior a la fecha de fin.');
         return;
     }
 
     const shiftToSave = {
         ...formData,
-        start: new Date(formData.start).toISOString(),
-        end: new Date(formData.end).toISOString()
+        start: startDate.toISOString(),
+        end: endDate.toISOString()
     } as Shift | Omit<Shift, 'id'>;
 
     const result = await onSave(shiftToSave);
@@ -73,7 +89,7 @@ export const ShiftForm: React.FC<ShiftFormProps> = ({ shift, onSave, onCancel, u
         <Input label="Inicio del Turno" name="start" type="datetime-local" value={formData.start || ''} onChange={handleChange} required />
         <Input label="Fin del Turno" name="end" type="datetime-local" value={formData.end || ''} onChange={handleChange} required />
       </div>
-       {error && <p className="text-danger text-sm">{error}</p>}
+       {error && <p className="text-danger text-sm bg-red-900/20 border border-red-800 p-2 rounded">{error}</p>}
       <div className="flex justify-end gap-4 pt-4 border-t border-gray-700">
         <Button type="button" variant="secondary" onClick={onCancel}>Cancelar</Button>
         <Button type="submit">Guardar Turno</Button>

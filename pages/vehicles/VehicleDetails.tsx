@@ -25,14 +25,18 @@ const DocumentSection: React.FC<{ title: string; documents: VehicleDocument[]; a
     const uploadedDocs = new Map<string, VehicleDocument>(documents.map(d => [d.name, d]));
     
     const getExpirationStatus = (dateStr?: string) => {
-        if (!dateStr) return null;
+        if (!dateStr) {
+            // If uploaded but no date, we assume it's valid or doesn't expire
+            return { color: 'text-green-400', icon: 'check-circle-2', text: 'Vigente' }; 
+        }
         const date = new Date(dateStr);
         const now = new Date();
         const thirtyDays = 30 * 24 * 60 * 60 * 1000;
         
         if (date < now) return { color: 'text-red-400', icon: 'alert-octagon', text: 'Caducado' };
         if (date.getTime() - now.getTime() < thirtyDays) return { color: 'text-yellow-400', icon: 'alert-triangle', text: 'Expira pronto' };
-        return null;
+        
+        return { color: 'text-green-400', icon: 'check-circle-2', text: 'Vigente' };
     };
 
     return (
@@ -59,16 +63,16 @@ const DocumentSection: React.FC<{ title: string; documents: VehicleDocument[]; a
                                             <span>{status.text}</span>
                                         </div>
                                     )}
-                                    <div className="flex items-center gap-2 text-green-400">
-                                        <i data-lucide="check-circle" className="h-4 w-4"></i>
-                                        <span>Cargado</span>
+                                    <div className="flex items-center gap-2 text-gray-400 border-l border-gray-600 pl-2">
                                         {/* Fix: Render the file name if 'doc.file' is a File object, as File objects cannot be rendered directly. */}
-                                        <span className="text-gray-400 text-xs font-mono hidden sm:inline-block">{typeof doc.file === 'string' ? doc.file : doc.file?.name}</span>
+                                        <span className="text-xs font-mono hidden sm:inline-block truncate max-w-[100px]">
+                                            {typeof doc.file === 'string' ? doc.file : doc.file?.name}
+                                        </span>
                                     </div>
                                 </div>
                             ) : (
-                                <div className="flex items-center gap-2 text-yellow-400">
-                                    <i data-lucide="alert-circle" className="h-4 w-4"></i>
+                                <div className="flex items-center gap-2 text-gray-500">
+                                    <i data-lucide="circle" className="h-4 w-4"></i>
                                     <span>Pendiente</span>
                                 </div>
                             )}
