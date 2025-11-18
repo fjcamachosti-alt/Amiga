@@ -102,16 +102,16 @@ export const Dashboard: React.FC = () => {
             
             {/* 15 Day Service Calendar */}
             <Card title="Calendario de Servicios (Próximos 15 Días)">
-                <div className="grid grid-cols-5 md:grid-cols-8 lg:grid-cols-15 gap-2 overflow-x-auto pb-2">
+                <div className="flex gap-2 overflow-x-auto pb-4 custom-scrollbar">
                     {calendarData.map((day, idx) => {
                         const dateObj = new Date(day.date);
                         const dayName = dateObj.toLocaleDateString('es-ES', { weekday: 'short' });
                         const dayNum = dateObj.getDate();
                         return (
-                            <div key={idx} className="flex flex-col items-center p-2 bg-gray-800 rounded-lg min-w-[60px]">
-                                <span className="text-xs text-gray-400 uppercase">{dayName}</span>
-                                <span className="text-lg font-bold">{dayNum}</span>
-                                <span className={`text-xs px-2 py-0.5 rounded-full mt-1 ${day.shifts > 0 ? 'bg-green-900 text-green-300' : 'bg-gray-700 text-gray-500'}`}>
+                            <div key={idx} className="flex flex-col items-center p-3 bg-gray-800 rounded-lg min-w-[80px] flex-shrink-0 border border-gray-700">
+                                <span className="text-xs text-gray-400 uppercase mb-1">{dayName}</span>
+                                <span className="text-xl font-bold text-white">{dayNum}</span>
+                                <span className={`text-xs px-2 py-0.5 rounded-full mt-2 font-medium ${day.shifts > 0 ? 'bg-green-900 text-green-300' : 'bg-gray-700 text-gray-500'}`}>
                                     {day.shifts} Svc
                                 </span>
                             </div>
