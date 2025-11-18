@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card } from '../../components/ui/Card';
-import { Incident, IncidentStatus } from '../../types';
+import { Incident, IncidentStatus, User, UserRole } from '../../types';
 import { Spinner } from '../../components/ui/Spinner';
 import { api } from '../../services/api';
 import { Button } from '../../components/ui/Button';
@@ -10,6 +11,7 @@ import { IncidentForm } from './IncidentForm';
 import { ShiftPlanning } from './ShiftPlanning';
 import { AccountManagement } from './AccountManagement';
 import { MedicalInventory } from './MedicalInventory';
+import { FuelControl } from './FuelControl';
 
 type OperationView = 'dashboard' | 'incidents' | 'shifts' | 'accounts' | 'fuel' | 'checklists' | 'inventory' | 'audit';
 
@@ -138,7 +140,11 @@ const IncidentsView: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     );
 };
 
-export const OperationsPage: React.FC = () => {
+interface OperationsPageProps {
+    user: User;
+}
+
+export const OperationsPage: React.FC<OperationsPageProps> = ({ user }) => {
     const [view, setView] = useState<OperationView>('dashboard');
 
     useEffect(() => {
@@ -149,6 +155,7 @@ export const OperationsPage: React.FC = () => {
     if (view === 'shifts') return <ShiftPlanning onBack={() => setView('dashboard')} />;
     if (view === 'accounts') return <AccountManagement onBack={() => setView('dashboard')} />;
     if (view === 'inventory') return <MedicalInventory onBack={() => setView('dashboard')} />;
+    if (view === 'fuel') return <FuelControl onBack={() => setView('dashboard')} />;
     
     // Placeholder for other views
     if (view !== 'dashboard') {
@@ -165,20 +172,38 @@ export const OperationsPage: React.FC = () => {
         )
     }
 
+    const allOperations = [
+        { id: 'shifts', title: 'Planificación de Turnos', icon: 'calendar-days', onClick: () => setView('shifts') },
+        { id: 'accounts', title: 'Gestión de Cuentas', icon: 'key-round', onClick: () => setView('accounts') },
+        { id: 'incidents', title: 'Sistema de Incidencias', icon: 'alert-triangle', onClick: () => setView('incidents') },
+        { id: 'inventory', title: 'Inventario Médico', icon: 'syringe', onClick: () => setView('inventory') },
+        { id: 'fuel', title: 'Control de Combustible', icon: 'fuel', onClick: () => setView('fuel') },
+        { id: 'checklists', title: 'Checklists Digitales', icon: 'clipboard-check', onClick: () => alert("Módulo no implementado.") },
+        { id: 'audit', title: 'Auditoría y Logs', icon: 'shield-check', onClick: () => alert("Módulo no implementado.") },
+    ];
+
+    // Filter operations based on role
+    const visibleOperations = allOperations.filter(op => {
+        if (user.rol === UserRole.Administrador || user.rol === UserRole.Gestor) return true;
+        
+        // Non-admins/managers only see specific modules
+        const allowedIds = ['incidents', 'inventory', 'checklists'];
+        return allowedIds.includes(op.id);
+    });
+
     return (
         <div className="space-y-6">
             <h2 className="text-3xl font-bold">Sistemas Complementarios (Operaciones)</h2>
             <p className="text-gray-400">Seleccione un sistema para gestionar.</p>
             
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                <OperationItem title="Planificación de Turnos" icon="calendar-days" onClick={() => setView('shifts')} />
-                <OperationItem title="Gestión de Cuentas" icon="key-round" onClick={() => setView('accounts')} />
-                <OperationItem title="Sistema de Incidencias" icon="alert-triangle" onClick={() => setView('incidents')} />
-                <OperationItem title="Inventario Médico" icon="syringe" onClick={() => setView('inventory')} />
-                <OperationItem title="Control de Combustible" icon="fuel" onClick={() => alert("Módulo no implementado.")} />
-                <OperationItem title="Checklists Digitales" icon="clipboard-check" onClick={() => alert("Módulo no implementado.")} />
-                <OperationItem title="Auditoría y Logs" icon="shield-check" onClick={() => alert("Módulo no implementado.")} />
+                {visibleOperations.map(op => (
+                     <OperationItem key={op.id} title={op.title} icon={op.icon} onClick={op.onClick} />
+                ))}
             </div>
+            {visibleOperations.length === 0 && (
+                <p className="text-gray-500 italic">No tienes permisos para ver operaciones.</p>
+            )}
         </div>
     );
 };

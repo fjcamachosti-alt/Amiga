@@ -1,5 +1,5 @@
 
-import { Vehicle, User, Alert, Incident, Client, Supplier, ERPFile, Shift, VehicleStatus, VehicleVisibility, UserRole, IncidentStatus, MedicalSupply, InterestData } from '../types';
+import { Vehicle, User, Alert, Incident, Client, Supplier, ERPFile, Shift, VehicleStatus, VehicleVisibility, UserRole, IncidentStatus, MedicalSupply, InterestData, FuelLog } from '../types';
 
 export const mockVehicles: Vehicle[] = [
   {
@@ -23,7 +23,11 @@ export const mockVehicles: Vehicle[] = [
         // Expiring soon for demo
         { name: 'Certificado Carrocero', file: 'cert_carrocero.pdf', uploadDate: '2023-02-01', expirationDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] },
     ],
-    documentosAdicionales: []
+    documentosAdicionales: [],
+    history: [
+        { id: 'h1', date: '2023-01-15T10:00:00Z', action: 'Creación', user: 'Admin', details: 'Alta de vehículo en sistema' },
+        { id: 'h2', date: '2023-06-20T14:30:00Z', action: 'Mantenimiento', user: 'Taller', details: 'Cambio de aceite' }
+    ]
   },
   {
     id: '2',
@@ -39,7 +43,8 @@ export const mockVehicles: Vehicle[] = [
     vencimientoSeguro: new Date(Date.now() + 80 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     documentosBasicos: [],
     documentosEspecificos: [],
-    documentosAdicionales: []
+    documentosAdicionales: [],
+    history: []
   },
   {
     id: '3',
@@ -55,7 +60,8 @@ export const mockVehicles: Vehicle[] = [
     vencimientoSeguro: new Date(Date.now() + 300 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     documentosBasicos: [],
     documentosEspecificos: [],
-    documentosAdicionales: []
+    documentosAdicionales: [],
+    history: []
   },
     {
     id: '4',
@@ -71,7 +77,8 @@ export const mockVehicles: Vehicle[] = [
     vencimientoSeguro: new Date(Date.now() + 120 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     documentosBasicos: [],
     documentosEspecificos: [],
-    documentosAdicionales: []
+    documentosAdicionales: [],
+    history: []
   },
 ];
 
@@ -222,4 +229,9 @@ export const mockMedicalSupplies: MedicalSupply[] = [
 export const mockInterestData: InterestData[] = [
     { id: 'id1', title: 'Protocolo de Limpieza', content: 'Todos los vehículos deben desinfectarse al finalizar el turno. Usar producto XYZ en cabina y zona asistencial.', updatedAt: '2024-01-20' },
     { id: 'id2', title: 'Códigos de Puerta Base 2', content: 'La clave de acceso peatonal es 1234. Portón vehículos: 5678#.', updatedAt: '2024-02-10' },
+];
+
+export const mockFuelLogs: FuelLog[] = [
+    { id: 'fl1', vehicleId: '1', date: '2023-10-20', liters: 45.5, cost: 72.50, mileage: 147500, performedBy: 'Carlos Sánchez' },
+    { id: 'fl2', vehicleId: '1', date: '2023-10-27', liters: 40.0, cost: 65.00, mileage: 147900, performedBy: 'Carlos Sánchez' },
 ];

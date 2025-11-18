@@ -37,7 +37,11 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
     <div className="min-h-screen flex items-center justify-center bg-background">
       <Card className="w-full max-w-md">
         <div className="text-center mb-8">
-            <i data-lucide="ambulance" className="mx-auto text-primary h-16 w-16"></i>
+            <img 
+              src="https://sume24h.com/wp-content/uploads/2019/10/LOGO-SUME.png" 
+              alt="Logo SUME" 
+              className="mx-auto w-[268px] h-[62px] object-contain mb-6" 
+            />
             <h1 className="text-4xl font-bold mt-4">AMIGA</h1>
             <p className="text-sm text-gray-400 mt-2">Aplicación Modular Inteligente de Gestion Avanzada</p>
         </div>

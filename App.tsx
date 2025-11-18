@@ -117,13 +117,13 @@ const App: React.FC = () => {
             case 'Mi Perfil':
                 return <MyProfile user={appState.user} />;
             case 'Vehículos':
-                return <VehiclesPage />;
+                return <VehiclesPage user={appState.user} />;
             case 'Empleados':
                 return <UsersPage />;
             case 'ERP':
                 return <ErpPage />;
             case 'Operaciones':
-                return <OperationsPage />;
+                return <OperationsPage user={appState.user} />;
             case 'Datos de Interés':
                 return <InterestDataPage />;
             case 'Calendario':

@@ -1,6 +1,6 @@
 
-import { mockVehicles, mockUsers, mockAlerts, mockIncidents, mockClients, mockSuppliers, mockErpFiles, mockShifts, mockMedicalSupplies, mockInterestData } from '../data/mockData';
-import { Vehicle, User, Incident, Client, Supplier, ERPFile, ERPFileCategory, IncidentStatus, Shift, MedicalSupply, AuthResponse, Alert, InterestData, VehicleDocument, UserDocument } from '../types';
+import { mockVehicles, mockUsers, mockAlerts, mockIncidents, mockClients, mockSuppliers, mockErpFiles, mockShifts, mockMedicalSupplies, mockInterestData, mockFuelLogs } from '../data/mockData';
+import { Vehicle, User, Incident, Client, Supplier, ERPFile, ERPFileCategory, IncidentStatus, Shift, MedicalSupply, AuthResponse, Alert, InterestData, VehicleDocument, UserDocument, FuelLog, VehicleHistory } from '../types';
 
 const LATENCY = 500; // ms
 
@@ -16,6 +16,7 @@ let erpFiles = [...mockErpFiles];
 let shifts = [...mockShifts];
 let medicalSupplies = [...mockMedicalSupplies];
 let interestData = [...mockInterestData];
+let fuelLogs = [...mockFuelLogs];
 let runtimeAlerts: Alert[] = [...mockAlerts];
 
 // Helper to generate simple tokens
@@ -174,14 +175,32 @@ export const api = {
   },
   saveVehicle: async (vehicle: Omit<Vehicle, 'id'> | Vehicle) => {
     await sleep(LATENCY);
+    
+    // History Logic
+    const historyEntry: VehicleHistory = {
+        id: `h${Date.now()}`,
+        date: new Date().toISOString(),
+        action: 'Modificación',
+        user: 'Admin/Gestor', // Mock user
+        details: 'Actualización de datos del vehículo'
+    };
+
     if ('id' in vehicle && vehicle.id) {
         const index = vehicles.findIndex(v => v.id === vehicle.id);
         if (index > -1) {
-            vehicles[index] = vehicle as Vehicle;
+            const existing = vehicles[index];
+            vehicles[index] = {
+                ...vehicle,
+                history: [...(existing.history || []), historyEntry]
+            } as Vehicle;
             return vehicles[index];
         }
     } else {
-        const newVehicle = { ...vehicle, id: String(Date.now()) } as Vehicle;
+        const newVehicle = { 
+            ...vehicle, 
+            id: String(Date.now()),
+            history: [{...historyEntry, action: 'Creación', details: 'Alta de vehículo'}] 
+        } as Vehicle;
         vehicles.push(newVehicle);
         return newVehicle;
     }
@@ -269,7 +288,6 @@ export const api = {
     };
   },
   
-  // Deprecated method for backward compatibility if needed, but logically merged into dashboard
   getProactiveVehicleAlerts: async () => {
       return generateAllProactiveAlerts().filter(a => a.relatedEntity === 'Vehículo');
   },
@@ -280,8 +298,6 @@ export const api = {
       if (idx > -1) {
           runtimeAlerts[idx].seen = true;
       } else {
-          // If it's a generated alert not in runtime array, we should add it as "seen"
-          // For this mock, we'll push it to runtime alerts with seen=true so it persists in session
           const dynamicAlerts = generateAllProactiveAlerts();
           const target = dynamicAlerts.find(a => a.id === alertId);
           if (target) {
@@ -298,18 +314,36 @@ export const api = {
   },
   saveIncident: async (incident: Omit<Incident, 'id'> | Incident) => {
     await sleep(LATENCY);
+    let savedIncident: Incident;
+
     if('id' in incident && incident.id) {
         const index = incidents.findIndex(i => i.id === incident.id);
         if(index > -1) {
             incidents[index] = incident as Incident;
-            return incidents[index];
+            savedIncident = incidents[index];
+        } else {
+            return null;
         }
     } else {
         const newIncident = { ...incident, id: `i${Date.now()}` } as Incident;
         incidents.push(newIncident);
-        return newIncident;
+        savedIncident = newIncident;
     }
-    return null;
+
+    // Log to Vehicle History
+    const vIndex = vehicles.findIndex(v => v.id === savedIncident.vehicleId);
+    if (vIndex > -1) {
+        const historyEntry: VehicleHistory = {
+            id: `h_inc_${Date.now()}`,
+            date: savedIncident.date || new Date().toISOString(),
+            action: 'Incidencia',
+            user: savedIncident.reportedBy,
+            details: `Incidencia reportada: ${savedIncident.description} (${savedIncident.status})`
+        };
+        vehicles[vIndex].history = [...(vehicles[vIndex].history || []), historyEntry];
+    }
+
+    return savedIncident;
   },
   deleteIncident: async (id: string) => {
     await sleep(LATENCY);
@@ -478,5 +512,34 @@ export const api = {
         return newData;
     }
     return null;
+  },
+  
+  // Fuel API
+  getFuelLogs: async (vehicleId?: string) => {
+      await sleep(LATENCY);
+      if (vehicleId) {
+          return fuelLogs.filter(l => l.vehicleId === vehicleId);
+      }
+      return fuelLogs;
+  },
+  saveFuelLog: async (log: Omit<FuelLog, 'id'> | FuelLog) => {
+      await sleep(LATENCY);
+      if ('id' in log && log.id) {
+          const index = fuelLogs.findIndex(l => l.id === log.id);
+          if (index > -1) {
+              fuelLogs[index] = log as FuelLog;
+              return fuelLogs[index];
+          }
+      } else {
+          const newLog = { ...log, id: `fl${Date.now()}` } as FuelLog;
+          fuelLogs.push(newLog);
+          return newLog;
+      }
+      return null;
+  },
+  deleteFuelLog: async (id: string) => {
+      await sleep(LATENCY);
+      fuelLogs = fuelLogs.filter(l => l.id !== id);
+      return true;
   }
 };

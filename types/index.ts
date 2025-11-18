@@ -32,6 +32,24 @@ export interface UserDocument {
   expirationDate?: string; // New field for alerts
 }
 
+export interface VehicleHistory {
+    id: string;
+    date: string; // ISO string
+    action: string;
+    user: string;
+    details?: string;
+}
+
+export interface FuelLog {
+    id: string;
+    vehicleId: string;
+    date: string;
+    liters: number;
+    cost: number;
+    mileage: number;
+    performedBy: string;
+}
+
 export interface Vehicle {
   id: string;
   matricula: string;
@@ -48,6 +66,7 @@ export interface Vehicle {
   documentosBasicos: VehicleDocument[];
   documentosEspecificos: VehicleDocument[];
   documentosAdicionales: VehicleDocument[];
+  history?: VehicleHistory[];
 }
 
 export enum UserRole {

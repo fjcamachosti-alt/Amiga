@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Vehicle, VehicleStatus, UserRole } from '../../types';
+import { Vehicle, VehicleStatus, UserRole, User } from '../../types';
 import { api } from '../../services/api';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
@@ -8,14 +8,21 @@ import { Spinner } from '../../components/ui/Spinner';
 import { VehicleForm } from './VehicleForm';
 import { VehicleDetails } from './VehicleDetails';
 import { Select } from '../../components/ui/Select';
-import { tokenService } from '../../services/tokenService';
+import { ConfirmationModal } from '../../components/ui/ConfirmationModal';
 
-export const VehiclesPage: React.FC = () => {
+interface VehiclesPageProps {
+    user: User;
+}
+
+export const VehiclesPage: React.FC<VehiclesPageProps> = ({ user }) => {
     const [vehicles, setVehicles] = useState<Vehicle[]>([]);
     const [loading, setLoading] = useState(true);
     const [isFormModalOpen, setIsFormModalOpen] = useState(false);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+    const [isSaveConfirmationOpen, setIsSaveConfirmationOpen] = useState(false);
+    
     const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+    const [vehicleToSave, setVehicleToSave] = useState<Vehicle | null>(null);
     const [viewingVehicle, setViewingVehicle] = useState<Vehicle | null>(null);
     
     // Filtering state
@@ -28,13 +35,15 @@ export const VehiclesPage: React.FC = () => {
     useEffect(() => {
         const init = async () => {
             setLoading(true);
-            const data = await api.getVehicles(); 
+            // Filter by assigned user if role is Technician
+            const userIdFilter = user.rol === UserRole.Tecnico ? user.id : undefined;
+            const data = await api.getVehicles(userIdFilter); 
             setVehicles(data);
             setLoading(false);
             setTimeout(() => window.lucide?.createIcons(), 0);
         }
         init();
-    }, []);
+    }, [user]);
 
     // Debounce search term
     useEffect(() => {
@@ -61,13 +70,28 @@ export const VehiclesPage: React.FC = () => {
         setViewingVehicle(vehicle);
         setIsDetailsModalOpen(true);
     };
+    
+    // Initiate Save Process
+    const onFormSubmit = (vehicle: Vehicle) => {
+        setVehicleToSave(vehicle);
+        setIsSaveConfirmationOpen(true);
+    };
 
-    const handleSaveVehicle = async (vehicle: Vehicle) => {
-        await api.saveVehicle(vehicle);
-        const updatedVehicles = await api.getVehicles();
-        setVehicles(updatedVehicles);
-        setIsFormModalOpen(false);
-        setSelectedVehicle(null);
+    // Confirm Save
+    const confirmSaveVehicle = async () => {
+        if (vehicleToSave) {
+            await api.saveVehicle(vehicleToSave);
+            // Refresh list
+            const userIdFilter = user.rol === UserRole.Tecnico ? user.id : undefined;
+            const updatedVehicles = await api.getVehicles(userIdFilter);
+            setVehicles(updatedVehicles);
+            
+            // Close modals
+            setIsSaveConfirmationOpen(false);
+            setIsFormModalOpen(false);
+            setSelectedVehicle(null);
+            setVehicleToSave(null);
+        }
     };
     
     const filteredVehicles = useMemo(() => {
@@ -91,15 +115,19 @@ export const VehiclesPage: React.FC = () => {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h2 className="text-3xl font-bold">Gestión de Vehículos</h2>
-                <Button onClick={handleNewVehicle} icon={<i data-lucide="plus-circle"></i>}>
-                    Nuevo Vehículo
-                </Button>
+                {/* Only Admin/Gestor/Office can create vehicles */}
+                {(user.rol !== UserRole.Tecnico && user.rol !== UserRole.Medico) && (
+                    <Button onClick={handleNewVehicle} icon={<i data-lucide="plus-circle"></i>}>
+                        Nuevo Vehículo
+                    </Button>
+                )}
             </div>
             
             <div className="bg-surface p-4 rounded-lg shadow space-y-4">
                  <div className="relative">
                     <input 
                         type="text"
+                        list="vehicle-search-suggestions"
                         placeholder="Buscar por Matrícula, Marca, Modelo..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -108,6 +136,11 @@ export const VehiclesPage: React.FC = () => {
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <i data-lucide="search" className="text-gray-400"></i>
                     </div>
+                    
+                    <datalist id="vehicle-search-suggestions">
+                        {uniqueBrands.map(b => <option key={`brand-${b}`} value={b} />)}
+                        {uniqueModels.map(m => <option key={`model-${m}`} value={m} />)}
+                    </datalist>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <Select label="Filtrar por Estado" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
@@ -152,11 +185,18 @@ export const VehiclesPage: React.FC = () => {
                                     <td className="p-4">
                                         <div className="flex items-center gap-4">
                                             <button onClick={() => handleViewDetails(vehicle)} className="text-blue-400 hover:underline">Detalles</button>
-                                            <button onClick={() => handleEditVehicle(vehicle)} className="text-primary hover:underline">Editar</button>
+                                            {(user.rol !== UserRole.Tecnico && user.rol !== UserRole.Medico) && (
+                                                <button onClick={() => handleEditVehicle(vehicle)} className="text-primary hover:underline">Editar</button>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>
                             ))}
+                            {filteredVehicles.length === 0 && (
+                                <tr>
+                                    <td colSpan={5} className="p-4 text-center text-gray-500">No se encontraron vehículos.</td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>
@@ -165,10 +205,18 @@ export const VehiclesPage: React.FC = () => {
             <Modal isOpen={isFormModalOpen} onClose={() => setIsFormModalOpen(false)} title={selectedVehicle ? 'Editar Vehículo' : 'Nuevo Vehículo'}>
                 <VehicleForm 
                     vehicle={selectedVehicle}
-                    onSave={handleSaveVehicle}
+                    onSave={onFormSubmit}
                     onCancel={() => setIsFormModalOpen(false)}
                 />
             </Modal>
+            
+            <ConfirmationModal
+                isOpen={isSaveConfirmationOpen}
+                onClose={() => setIsSaveConfirmationOpen(false)}
+                onConfirm={confirmSaveVehicle}
+                title="Confirmar Guardado"
+                message="¿Estás seguro de que quieres guardar los datos introducidos para este vehículo?"
+            />
 
             <Modal isOpen={isDetailsModalOpen} onClose={() => setIsDetailsModalOpen(false)} title={`Detalles del Vehículo: ${viewingVehicle?.matricula || ''}`}>
                 {viewingVehicle && <VehicleDetails vehicle={viewingVehicle} />}
