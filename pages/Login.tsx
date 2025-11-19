@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Card } from '../components/ui/Card';
@@ -16,6 +16,10 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    window.lucide?.createIcons();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,11 +41,9 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
     <div className="min-h-screen flex items-center justify-center bg-background">
       <Card className="w-full max-w-md">
         <div className="text-center mb-8">
-            <img 
-              src="https://sume24h.com/wp-content/uploads/2019/10/LOGO-SUME.png" 
-              alt="Logo SUME" 
-              className="mx-auto w-[268px] h-[62px] object-contain mb-6" 
-            />
+            <div className="flex justify-center mb-4">
+                <i data-lucide="ambulance" className="h-24 w-24 text-primary"></i>
+            </div>
             <h1 className="text-4xl font-bold mt-4">AMIGA</h1>
             <p className="text-sm text-gray-400 mt-2">Aplicación Modular Inteligente de Gestion Avanzada</p>
         </div>
